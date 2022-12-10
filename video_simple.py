@@ -9,7 +9,7 @@ def process_frame(img):
     results=hands.process(img_RGB)
 
     # 如果有检测到手
-    if results.multi_hand_landmarks:  # 如果有检测到手
+    if results.multi_hand_landmarks:
         # 遍历每一只检测出的手
         for hand_idx in range(len(results.multi_hand_landmarks)):
             hand_21 = results.multi_hand_landmarks[hand_idx]  # 获取该手的所有关键点坐标
