@@ -14,7 +14,7 @@ def process_frame(img):
         for hand_idx in range(len(results.multi_hand_landmarks)):
             hand_21 = results.multi_hand_landmarks[hand_idx]  # 获取该手的所有关键点坐标
             mpDraw.draw_landmarks(img, hand_21, mp_hands.HAND_CONNECTIONS)  # 可视化
-        # 在三维坐标系中可视化索引为0的手
+        # 在三维坐标系中可视化索引为0的手(利用matplotlib和mediapipe共同构建的)
         # mpDraw.plot_landmarks(results.multi_hand_landmarks[0], mp_hands.HAND_CONNECTIONS)
     return img
 
