@@ -1,6 +1,7 @@
 import cv2
 import mediapipe as mp
 import socket
+import time
 
 mp_hands=mp.solutions.hands
 hands=mp_hands.Hands(static_image_mode=False,
@@ -52,7 +53,13 @@ def process_frame(img):
                 cz=hand_21.landmark[i].z
 
                 # 这里把cx、cy、cz传输过去
-                sendList.append([cx,h-cy,cz])
+                # sendList.append([cx,h-cy,cz])
+                # 这里发送的数据要注意unity中的坐标原点是左下方，x向正右方向，y向上方向
+                # x坐标要注意因为是镜像翻转后的处理，因此这里要镜像翻转回来
+                sendList.append(w-cx)
+                # y坐标的方向opencv和unity相反，所以也要翻转回来
+                sendList.append(h-cy)
+                sendList.append(cz)
 
                 # 这里深度的缩放系数设置为了h
                 depth_z=(cz0-cz)
@@ -76,7 +83,10 @@ def process_frame(img):
                     img = cv2.circle(img, (cx, cy), radius, (223, 155, 60), -1)
 
             sock.sendto(str.encode(str(sendList)), serverAddressPort)
-            print(f'发送成功，数据为{str.encode(str(sendList))}')
+            # print(f'发送成功，数据为{str.encode(str(sendList))}')
+
+        # time.sleep(0.25)
+
     return img
 
 # 调用摄像头获取帧数
