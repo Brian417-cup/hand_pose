@@ -3,6 +3,8 @@ import mediapipe as mp
 import socket
 import time
 
+# 建议：摄像头位于人的正前方进行使用，方便和unity进行udp交互
+
 mp_hands=mp.solutions.hands
 hands=mp_hands.Hands(static_image_mode=False,
                      max_num_hands=2,
@@ -12,6 +14,7 @@ mpDraw=mp.solutions.drawing_utils
 
 # 使用udp进行数据传输
 sock=socket.socket(socket.AF_INET,socket.SOCK_DGRAM)
+# IP地址、端口号
 serverAddressPort=('127.0.0.1',9090)
 
 # 单帧处理
@@ -90,9 +93,14 @@ def process_frame(img):
     return img
 
 # 调用摄像头获取帧数
-def use_camera():
+# is_default:是否使用电脑默认的摄像头，True表示使用默认，False表示非默认
+# camera_idx:如果不使用电脑默认的摄像头,需要指定摄像头的下标索引
+def use_camera(is_default=True,camera_idx=None):
     cap=cv2.VideoCapture(0)
-    cap.open(1)
+    if is_default:
+        cap.open(0)
+    else:
+        cap.open(camera_idx)
 
     # time.sleep(2)
 
@@ -116,4 +124,7 @@ def use_camera():
     cv2.destroyAllWindows()
 
 if __name__ == '__main__':
-    use_camera()
+    # 使用默认摄像头
+    # use_camera(is_default=True)
+    # 不使用默认摄像头
+    use_camera(is_default=False,camera_idx=1)
