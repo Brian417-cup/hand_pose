@@ -1,7 +1,106 @@
 import cv2
 import mediapipe as mp
-import socket
 import time
+import math
+import socket
+
+#-------------------------------------------------------------
+# 手势检测
+
+
+# 根据手指四个关节判断手指是否伸直
+def get_angleError(point_4,point_3,point_2,point_1,w,h):
+    try:
+        point_4_cx, point_4_cy = int(point_4.x * w), int(point_4.y * h)
+        point_3_cx, point_3_cy = int(point_3.x * w), int(point_3.y * h)
+        point_2_cx, point_2_cy = int(point_2.x * w), int(point_2.y * h)
+        point_1_cx, point_1_cy = int(point_1.x * w), int(point_1.y * h)
+
+        angle_1 = math.degrees(math.atan((point_3_cx - point_4_cx) / (point_3_cy - point_4_cy)))
+        angle_2 = math.degrees(math.atan((point_1_cx - point_2_cx) / (point_1_cy - point_2_cy)))
+        angle_error = abs(angle_1 - angle_2)
+        if angle_error<12:
+            isStraight = 1
+        else:
+            isStraight = 0
+    except:
+        angle_error = 1000
+        isStraight = 0
+
+    return angle_error, isStraight
+
+# 根据五根手指伸直程度识别手势
+def get_custom_gesture(isStraight_list):
+    if isStraight_list[0]==0 and isStraight_list[1]==1 and isStraight_list[2]==0 and isStraight_list[3]==0 and isStraight_list[4]==0:
+        gesture = "one"
+    elif isStraight_list[0]==0 and isStraight_list[1]==1 and isStraight_list[2]==1 and isStraight_list[3]==0 and isStraight_list[4]==0:
+        gesture = "two"
+    elif isStraight_list[0]==0 and isStraight_list[1]==0 and isStraight_list[2]==1 and isStraight_list[3]==1 and isStraight_list[4]==1:
+        gesture = "three"
+    elif isStraight_list[0]==0 and isStraight_list[1]==1 and isStraight_list[2]==1 and isStraight_list[3]==1 and isStraight_list[4]==1:
+        gesture = "four"
+    elif isStraight_list[0]==1 and isStraight_list[1]==1 and isStraight_list[2]==1 and isStraight_list[3]==1 and isStraight_list[4]==1:
+        gesture = "five"
+    else:
+        gesture = "None"
+
+    return gesture
+
+def predict_gesture(handLms,h,w):
+    # 判断拇指手势方向：
+    isStraight_list = []
+    point_4 = handLms.landmark[4]
+    point_3 = handLms.landmark[3]
+    point_2 = handLms.landmark[2]
+    point_1 = handLms.landmark[1]
+    angle_error_1, isStraight_1 = get_angleError(point_4, point_3, point_2, point_1,h,w)
+    # print("isStraight_1:", isStraight_1)
+    isStraight_list.append(isStraight_1)
+
+    # 判断食指手势方向：
+    point_4 = handLms.landmark[8]
+    point_3 = handLms.landmark[7]
+    point_2 = handLms.landmark[6]
+    point_1 = handLms.landmark[5]
+    angle_error_2, isStraight_2 = get_angleError(point_4, point_3, point_2, point_1,h,w)
+    # print("isStraight_2:", isStraight_2)
+    isStraight_list.append(isStraight_2)
+
+    # 判断中指手势方向：
+    point_4 = handLms.landmark[12]
+    point_3 = handLms.landmark[11]
+    point_2 = handLms.landmark[10]
+    point_1 = handLms.landmark[9]
+    angle_error_3, isStraight_3 = get_angleError(point_4, point_3, point_2, point_1,h,w)
+    # print("isStraight_3:", isStraight_3)
+    isStraight_list.append(isStraight_3)
+
+    # 判断无名指手势方向：
+    point_4 = handLms.landmark[16]
+    point_3 = handLms.landmark[15]
+    point_2 = handLms.landmark[14]
+    point_1 = handLms.landmark[13]
+    angle_error_4, isStraight_4 = get_angleError(point_4, point_3, point_2, point_1,h,w)
+    # print("isStraight_4:", isStraight_4)
+    isStraight_list.append(isStraight_4)
+
+    # 判断小指手势方向：
+    point_4 = handLms.landmark[20]
+    point_3 = handLms.landmark[19]
+    point_2 = handLms.landmark[18]
+    point_1 = handLms.landmark[17]
+    angle_error_5, isStraight_5 = get_angleError(point_4, point_3, point_2, point_1,h,w)
+    # print("isStraight_5:", isStraight_5)
+    isStraight_list.append(isStraight_5)
+
+    # 根据五根手指的伸直程度判断手势所对应的数字
+    gesture = get_custom_gesture(isStraight_list)
+
+    return gesture
+
+
+#--------------------------------------------------------------
+# 和video_socket.py中的内容一致
 
 # 建议：摄像头位于人的正前方进行使用，方便和unity进行udp交互
 
@@ -89,6 +188,15 @@ def process_frame(img):
                 if i in [4, 12, 16, 20]:  # 指尖（除食指指尖）
                     img = cv2.circle(img, (cx, cy), radius, (223, 155, 60), -1)
 
+            # 手势预测
+            gesture_res=predict_gesture(hand_21,h,w)
+
+            # 手势在屏幕上方显示
+            cv2.putText(img, gesture_res, (10, 100), cv2.FONT_HERSHEY_PLAIN, 3, (255, 0, 255), 3)
+
+            sendList.append(gesture_res)
+
+            # 发送给客户端完整的数据
             sock.sendto(str.encode(str(sendList)), serverAddressPort)
             # print(f'发送成功，数据为{str.encode(str(sendList))}')
 
@@ -126,6 +234,7 @@ def use_camera(is_default=True,camera_idx=None):
 
     cap.release()
     cv2.destroyAllWindows()
+
 
 if __name__ == '__main__':
     # 使用默认摄像头
