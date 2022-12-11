@@ -18,7 +18,7 @@ public class HandTracking : MonoBehaviour
 
     // 前两个数字分别表示图像的高和宽
     private int BEGIN_OFFSET = 0;
-
+    
     private void FixedUpdate()
     {
         string data = ReceiveByUDP._instance.data;
@@ -36,9 +36,11 @@ public class HandTracking : MonoBehaviour
 
         string[] strs = data.Split(',');
 
-        float h = float.Parse(strs[0]);
-        float w = float.Parse(strs[1]);
+        // float h = float.Parse(strs[0]);
+        // float w = float.Parse(strs[1]);
 
+        GestureDelegate.GestureResult = strs[strs.Length - 1];
+        
         for (int i = 0; i < KEY_POINTS_CNT; i++)
         {
             float x = 5 - float.Parse(strs[i * 3 + BEGIN_OFFSET]) / xScale + xOffset;
