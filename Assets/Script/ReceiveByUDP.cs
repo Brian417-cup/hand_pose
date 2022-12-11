@@ -19,7 +19,7 @@ public class ReceiveByUDP : MonoBehaviour
     public int port = 9090;
     public bool startReceiveing = true;
     public string data;
-
+    
     private void Awake()
     {
         _instance = this;
@@ -43,7 +43,7 @@ public class ReceiveByUDP : MonoBehaviour
                 IPEndPoint anyIP = new IPEndPoint(IPAddress.Any, 0);
                 byte[] bytes = client.Receive(ref anyIP);
                 data = Encoding.UTF8.GetString(bytes);
-                Debug.Log("收到信息");
+                // Debug.Log("收到信息");
             }
             catch (Exception e)
             {
